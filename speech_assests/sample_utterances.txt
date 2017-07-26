@@ -1,0 +1,11 @@
+DefineWordIntent Tell me the meaning of {Word}
+DefineWordIntent What is the the meaning of {Word}
+
+AMAZON.HelpIntent help
+AMAZON.HelpIntent help me
+AMAZON.HelpIntent what can I ask
+AMAZON.HelpIntent what can I do
+
+AMAZON.CancelIntent cancel
+
+AMAZON.StopIntent stop
