@@ -9,6 +9,7 @@ http://amzn.to/1LGWsLG
 from __future__ import print_function
 import urllib, json, time, urllib2
 import bs4
+import requests
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -45,114 +46,66 @@ def get_welcome_response():
 
     session_attributes = {}
     card_title = "Welcome"
-    speech_output = "Welcome to the Amazon Alexa Contest Notify Skills Kit. " \
-                    "Please tell me from where you want the contest details by saying, " \
-                    "When is the codeforces next contest."
+    speech_output = "Welcome to the Amazon Alexa Define Word Skills Kit. " \
+                    "Please ask me questions like Tell me the meaning of Love."
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
-    reprompt_text = "Please tell me from where you want the contest details by saying, " \
-                    "When is the codeforces next contest."
+    reprompt_text = "Please tell me word for which you want the meaning."
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
 
+def getErrorMessage():
+    session_attributes = {}
+    card_title = "Help Content"
+    speech_output = "If you just said something then I can't understand it. " \
+                    "Please ask me questions like Tell me the meaning of Love."
+    # If the user either does not reply to the welcome message or says something
+    # that is not understood, they will be prompted again with this text.
+    reprompt_text = "Please ask me questions like Tell me the meaning of Love."
+    should_end_session = False
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
+
 def handle_session_end_request():
     card_title = "Session Ended"
-    speech_output = "Thank you for trying Amazon Alexa Contest Notify Skills Kit. " \
+    speech_output = "Thank you for trying Define Word Skills Kit. " \
                     "Have a nice day! "
     # Setting this to true ends the session and exits the skill.
     should_end_session = True
     return build_response({}, build_speechlet_response(
         card_title, speech_output, None, should_end_session))
 
-def getHackerrankContest(intent, session):
-    """ Get the hackerrank contest details and prepares the speech to reply to the user.
+def getMeaning(intent, session):
+    """ Get the word meaning and prepares the speech to reply to the user.
     """
-    card_title = "HackerRank Contest Details"
+    card_title = "Define Word"
     session_attributes = {}
     should_end_session = True
-    hackerrank_contest_link = "https://www.hackerrank.com/contests"
-    page = urllib2.urlopen(hackerrank_contest_link)
-    soup = bs4.BeautifulSoup(page, "html.parser")
-    list = soup.find_all("div", class_="active_contests")
-    speech_output = "Sorry, There are no upcoming contests."
-    if len(list) > 0:
-        list = list[0].find_all('li')
-        list.pop(0)
-        if len(list) > 0:
-            contest = []
-            for r in list:
-                temp = r.find_all('button')
-                if len(temp) > 0 and temp[0].text == "Sign Up":
-                    contest = r
-                    break
-            contest_name = contest.find_all('span')[0].text
-            start = contest.find_all('meta')[0]["content"]
-            start = time.strptime(start[0:19], '%Y-%m-%dT%H:%M:%S')
-            start = time.mktime(start)
-            end = contest.find_all('meta')[1]["content"]
-            end = time.strptime(end[0:19], '%Y-%m-%dT%H:%M:%S')
-            end = time.mktime(end)
-            then = int(time.time())
-            if then < start:
-                now = start
+    speech_output = "Sorry, Meaning not found for the given word."
+    if 'Word' in intent['slots']:
+        word = intent['slots']['Word']
+        if 'value' in word:
+            word = word['value']
+            if word == "":
+                return getErrorMessage()
             else:
-                now = end
-            d = divmod(now - then, 86400)
-            h = divmod(d[1], 3600)
-            m = divmod(h[1], 60)
-            s = m[1]
-
-            if then < start:
-                speech_output = "The next contest " + contest_name + " on codeforces will start in next " \
-                        '%d days, %d hours, %d minutes, %d seconds' % (d[0], h[0], m[0], s)
-            else:
-                speech_output = "The contest " + contest_name + " on Hackerrank is running and it will end in " \
-                        '%d days, %d hours, %d minutes, %d seconds' % (d[0], h[0], m[0], s)
-
-    reprompt_text = "Please tell me from where you want the contest details by saying, " \
-                    "When is the codeforces next contest."
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
-
-def getCodeforcesContest(intent, session):
-    """ Get the codeforces contest details and prepares the speech to reply to the user.
-    """
-
-    card_title = "Codeforces Contest Details"
-    session_attributes = {}
-    should_end_session = True
-    url = "http://codeforces.com/api/contest.list?gym=false"
-    response = urllib.urlopen(url)
-    data = json.loads(response.read())
-    if data["status"] == "OK":
-        result = []
-        for d in data["result"]:
-            if d["phase"] != "BEFORE":
-                break
-            result = d
-        if result == []:
-            speech_output = "Sorry, There are no upcoming contests."
+                url = 'https://www.google.co.in/search?q=define%20' + word + '#cns=1'
+                headers = {"user-agent": "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"}
+                response = requests.get(url, headers=headers)
+                html = response.content
+                final_soup = bs4.BeautifulSoup(html, "html5lib")
+                everyThing = final_soup.select("div._Jig")
+                if len(everyThing) > 0:
+                    speech_output = "The meaning of " + word + " is " + everyThing[0].text.split('.')[0]
         else:
-            now = result["startTimeSeconds"]
-            then = int(time.time())
-            d = divmod(now - then, 86400)
-            h = divmod(d[1], 3600)
-            m = divmod(h[1], 60)
-            s = m[1]
-            speech_output = "The next contest " + result["name"] + " will start in " \
-                            '%d days, %d hours, %d minutes, %d seconds' % (d[0], h[0], m[0], s)
+            return getErrorMessage()
     else:
-        speech_output = "Sorry, Right now we are facing technical issues. " \
-                        "Please try again after some time."
-    # If the user either does not reply to the welcome message or says something
-    # that is not understood, they will be prompted again with this text.
-    reprompt_text = "Please tell me from where you want the contest details by saying, " \
-                    "When is the codeforces next contest."
+        return getErrorMessage()
+    reprompt_text = "Please ask me questions like Tell me the meaning of Love."
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
-
 
 # --------------- Events ------------------
 
@@ -184,8 +137,8 @@ def on_intent(intent_request, session):
     intent_name = intent_request['intent']['name']
 
     # Dispatch to your skill's intent handlers
-    if intent_name == "CodeforcesContestIntent":
-        return getCodeforcesContest(intent, session)
+    if intent_name == "DefineWordIntent":
+        return getMeaning(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
