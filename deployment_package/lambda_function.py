@@ -46,11 +46,22 @@ def get_welcome_response():
 
     session_attributes = {}
     card_title = "Welcome"
-    speech_output = "Welcome to the Amazon Alexa Define Word Skills Kit. " \
+    speech_output = "Welcome to the Define Word. " \
                     "Please ask me questions like Tell me the meaning of Love."
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
     reprompt_text = "Please tell me word for which you want the meaning."
+    should_end_session = False
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
+
+def getHelpMessage():
+    session_attributes = {}
+    card_title = "Help Content"
+    speech_output = "You can ask me questions like Tell me the meaning of Love."
+    # If the user either does not reply to the welcome message or says something
+    # that is not understood, they will be prompted again with this text.
+    reprompt_text = "Please ask me questions like Tell me the meaning of Love."
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
@@ -70,7 +81,7 @@ def getErrorMessage():
 
 def handle_session_end_request():
     card_title = "Session Ended"
-    speech_output = "Thank you for trying Define Word Skills Kit. " \
+    speech_output = "Thank you for trying Define Word. " \
                     "Have a nice day! "
     # Setting this to true ends the session and exits the skill.
     should_end_session = True
@@ -140,7 +151,7 @@ def on_intent(intent_request, session):
     if intent_name == "DefineWordIntent":
         return getMeaning(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
-        return get_welcome_response()
+        return getHelpMessage()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
         return handle_session_end_request()
     else:
